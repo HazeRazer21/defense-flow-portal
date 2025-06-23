@@ -1,14 +1,31 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Play, Lock, Clock, Star } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import PaymentModal from '@/components/PaymentModal';
+import { useToast } from '@/hooks/use-toast';
 
 const Videos = () => {
-  const [userHasAccess, setUserHasAccess] = useState(false); // This would be determined by authentication/payment status
+  const [userHasAccess, setUserHasAccess] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if user has purchased any classes or subscriptions
+    const payments = JSON.parse(localStorage.getItem('payments') || '[]');
+    const hasValidPayment = payments.length > 0;
+    setUserHasAccess(hasValidPayment);
+  }, []);
+
+  const subscriptionInfo = {
+    name: 'Premium Video Access',
+    price: 29,
+    date: 'Monthly Subscription'
+  };
 
   const videoCategories = [
     {
@@ -59,11 +76,27 @@ const Videos = () => {
 
   const handleVideoClick = (videoId: number, isPremium: boolean) => {
     if (isPremium && !userHasAccess) {
-      alert('Please purchase a class or subscription to access premium content');
+      setIsPaymentModalOpen(true);
       return;
     }
     console.log('Playing video:', videoId);
-    // TODO: Implement video player
+    toast({
+      title: "Video Starting",
+      description: "Video player would open here in a real implementation",
+    });
+  };
+
+  const handlePaymentSuccess = () => {
+    setUserHasAccess(true);
+    setIsPaymentModalOpen(false);
+    toast({
+      title: "Welcome to Premium!",
+      description: "You now have access to all premium video content",
+    });
+  };
+
+  const handlePaymentCancel = () => {
+    setIsPaymentModalOpen(false);
   };
 
   return (
@@ -86,11 +119,27 @@ const Videos = () => {
                   Unlock Premium Content
                 </h3>
                 <p className="text-gray-300 mb-4">
-                  Get access to all premium videos by booking a class or purchasing a subscription
+                  Get access to all premium videos with our monthly subscription
                 </p>
-                <Button className="btn-primary">
-                  View Classes
-                </Button>
+                <div className="flex gap-4 justify-center">
+                  <Button 
+                    className="btn-primary"
+                    onClick={() => setIsPaymentModalOpen(true)}
+                  >
+                    Subscribe for $29/month
+                  </Button>
+                  <Button variant="outline" className="text-white border-white hover:bg-white hover:text-black">
+                    View Classes
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {userHasAccess && (
+              <div className="bg-green-500/20 border border-green-500 rounded-lg p-4 max-w-2xl mx-auto">
+                <p className="text-green-400">
+                  ✅ You have access to all premium content!
+                </p>
               </div>
             )}
           </div>
@@ -165,6 +214,13 @@ const Videos = () => {
           ))}
         </div>
       </div>
+
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={handlePaymentCancel}
+        onSuccess={handlePaymentSuccess}
+        classInfo={subscriptionInfo}
+      />
       
       <Footer />
     </div>

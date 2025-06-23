@@ -6,9 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Users, MapPin } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import PaymentModal from '@/components/PaymentModal';
+import { useToast } from '@/hooks/use-toast';
 
 const Classes = () => {
-  const [selectedClass, setSelectedClass] = useState<number | null>(null);
+  const [selectedClass, setSelectedClass] = useState<any>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const { toast } = useToast();
 
   const classes = [
     {
@@ -55,10 +59,24 @@ const Classes = () => {
     }
   ];
 
-  const handleBookClass = (classId: number) => {
-    setSelectedClass(classId);
-    console.log('Booking class:', classId);
-    // TODO: Implement actual booking logic
+  const handleBookClass = (classItem: any) => {
+    setSelectedClass(classItem);
+    setIsPaymentModalOpen(true);
+    console.log('Opening payment modal for class:', classItem.id);
+  };
+
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "Payment Successful!",
+      description: `You have successfully registered for ${selectedClass?.name}`,
+    });
+    setIsPaymentModalOpen(false);
+    setSelectedClass(null);
+  };
+
+  const handlePaymentCancel = () => {
+    setIsPaymentModalOpen(false);
+    setSelectedClass(null);
   };
 
   return (
@@ -128,7 +146,7 @@ const Classes = () => {
                       ${classItem.price}
                     </span>
                     <Button 
-                      onClick={() => handleBookClass(classItem.id)}
+                      onClick={() => handleBookClass(classItem)}
                       className="btn-primary"
                       disabled={classItem.enrolled >= classItem.capacity}
                     >
@@ -141,6 +159,19 @@ const Classes = () => {
           </div>
         </div>
       </div>
+      
+      {selectedClass && (
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={handlePaymentCancel}
+          onSuccess={handlePaymentSuccess}
+          classInfo={{
+            name: selectedClass.name,
+            price: selectedClass.price,
+            date: new Date(selectedClass.date).toLocaleDateString()
+          }}
+        />
+      )}
       
       <Footer />
     </div>
