@@ -1,5 +1,4 @@
-
-import { Button } from '@/components/ui/button';
+import { Button, Link } from '@/components/ui/button';
 
 const HeroSection = () => {
   return (
@@ -22,12 +21,16 @@ const HeroSection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Button className="btn-primary text-lg px-8 py-4">
-              Book a Class Now
-            </Button>
-            <Button className="btn-secondary text-lg px-8 py-4">
-              Watch Free Preview
-            </Button>
+            <Link to="/classes">
+              <Button className="btn-primary text-lg px-8 py-4">
+                Book a Class Now
+              </Button>
+            </Link>
+            <Link to="/videos">
+              <Button className="btn-secondary text-lg px-8 py-4">
+                Watch Training Videos
+              </Button>
+            </Link>
           </div>
           
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">

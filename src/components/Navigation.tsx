@@ -2,14 +2,15 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, Home, Calendar, Video, Contact, User, LogIn } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { name: 'Home', icon: Home, href: '#home' },
-    { name: 'Classes', icon: Calendar, href: '#classes' },
-    { name: 'Videos', icon: Video, href: '#videos' },
+    { name: 'Home', icon: Home, href: '/' },
+    { name: 'Classes', icon: Calendar, href: '/classes' },
+    { name: 'Videos', icon: Video, href: '/videos' },
     { name: 'Contact', icon: Contact, href: '#contact' },
   ];
 
@@ -19,36 +20,51 @@ const Navigation = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-white">
+            <Link to="/" className="text-2xl font-bold text-white">
               Martial Arts <span className="text-martial-purple">Academy</span>
-            </h1>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
               {navItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="text-gray-300 hover:text-martial-purple px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300 flex items-center gap-2"
-                >
-                  <item.icon size={16} />
-                  {item.name}
-                </a>
+                item.href.startsWith('#') ? (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className="text-gray-300 hover:text-martial-purple px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300 flex items-center gap-2"
+                  >
+                    <item.icon size={16} />
+                    {item.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="text-gray-300 hover:text-martial-purple px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300 flex items-center gap-2"
+                  >
+                    <item.icon size={16} />
+                    {item.name}
+                  </Link>
+                )
               ))}
             </div>
           </div>
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-gray-300 hover:text-martial-purple">
-              <LogIn size={16} className="mr-2" />
-              Login
-            </Button>
-            <Button className="btn-primary">
-              Sign Up
-            </Button>
+            <Link to="/login">
+              <Button variant="ghost" className="text-gray-300 hover:text-martial-purple">
+                <LogIn size={16} className="mr-2" />
+                Login
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button className="btn-primary">
+                Sign Up
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -68,24 +84,40 @@ const Navigation = () => {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               {navItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="text-gray-300 hover:text-martial-purple block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300 flex items-center gap-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <item.icon size={16} />
-                  {item.name}
-                </a>
+                item.href.startsWith('#') ? (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className="text-gray-300 hover:text-martial-purple block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300 flex items-center gap-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <item.icon size={16} />
+                    {item.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="text-gray-300 hover:text-martial-purple block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300 flex items-center gap-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <item.icon size={16} />
+                    {item.name}
+                  </Link>
+                )
               ))}
               <div className="pt-4 space-y-2">
-                <Button variant="ghost" className="w-full text-gray-300 hover:text-martial-purple">
-                  <LogIn size={16} className="mr-2" />
-                  Login
-                </Button>
-                <Button className="w-full btn-primary">
-                  Sign Up
-                </Button>
+                <Link to="/login">
+                  <Button variant="ghost" className="w-full text-gray-300 hover:text-martial-purple">
+                    <LogIn size={16} className="mr-2" />
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="w-full btn-primary">
+                    Sign Up
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

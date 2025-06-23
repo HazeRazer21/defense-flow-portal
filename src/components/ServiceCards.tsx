@@ -1,7 +1,7 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Video, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const ServiceCards = () => {
   const services = [
@@ -10,8 +10,8 @@ const ServiceCards = () => {
       title: 'Book a Class',
       description: 'Reserve your spot in upcoming classes. View schedule and book online.',
       actions: [
-        { label: 'Book Now', primary: true },
-        { label: 'View Schedule', primary: false }
+        { label: 'Book Now', primary: true, href: '/classes' },
+        { label: 'View Schedule', primary: false, href: '/classes' }
       ]
     },
     {
@@ -19,17 +19,17 @@ const ServiceCards = () => {
       title: 'Membership Plans',
       description: 'Explore flexible membership options and manage your subscription.',
       actions: [
-        { label: 'Join Now', primary: true },
-        { label: 'See Plans', primary: false }
+        { label: 'Join Now', primary: true, href: '/signup' },
+        { label: 'See Plans', primary: false, href: '/classes' }
       ]
     },
     {
       icon: Video,
-      title: 'Read Our Blog',
-      description: 'Discover training tips, academy news, and martial arts insights.',
+      title: 'Learning Videos',
+      description: 'Access premium training videos and martial arts techniques.',
       actions: [
-        { label: 'Read Articles', primary: true },
-        { label: 'Browse Categories', primary: false }
+        { label: 'Watch Videos', primary: true, href: '/videos' },
+        { label: 'Browse Library', primary: false, href: '/videos' }
       ]
     }
   ];
@@ -66,12 +66,13 @@ const ServiceCards = () => {
               
               <CardContent className="space-y-4">
                 {service.actions.map((action, actionIndex) => (
-                  <Button
-                    key={actionIndex}
-                    className={action.primary ? 'btn-primary w-full' : 'btn-secondary w-full'}
-                  >
-                    {action.label}
-                  </Button>
+                  <Link key={actionIndex} to={action.href}>
+                    <Button
+                      className={action.primary ? 'btn-primary w-full' : 'btn-secondary w-full'}
+                    >
+                      {action.label}
+                    </Button>
+                  </Link>
                 ))}
               </CardContent>
             </Card>
