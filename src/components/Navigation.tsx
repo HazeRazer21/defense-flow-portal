@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, Home, Calendar, Video, Contact, User, Login } from 'lucide-react';
+import { Menu, Home, Calendar, Video, Contact, User, LogIn } from 'lucide-react';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,7 +43,7 @@ const Navigation = () => {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" className="text-gray-300 hover:text-martial-purple">
-              <Login size={16} className="mr-2" />
+              <LogIn size={16} className="mr-2" />
               Login
             </Button>
             <Button className="btn-primary">
@@ -80,7 +80,7 @@ const Navigation = () => {
               ))}
               <div className="pt-4 space-y-2">
                 <Button variant="ghost" className="w-full text-gray-300 hover:text-martial-purple">
-                  <Login size={16} className="mr-2" />
+                  <LogIn size={16} className="mr-2" />
                   Login
                 </Button>
                 <Button className="w-full btn-primary">
