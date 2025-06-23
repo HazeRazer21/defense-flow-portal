@@ -1,4 +1,6 @@
-import { Button, Link } from '@/components/ui/button';
+
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const HeroSection = () => {
   return (
