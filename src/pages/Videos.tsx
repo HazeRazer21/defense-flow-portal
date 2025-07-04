@@ -6,35 +6,31 @@ import { Badge } from '@/components/ui/badge';
 import { Play, Lock, Clock, Star } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import PaymentModal from '@/components/PaymentModal';
+import SubscriptionPlans from '@/components/SubscriptionPlans';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const Videos = () => {
-  const [userHasAccess, setUserHasAccess] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
+  const { user } = useAuth();
+  const { subscriptionData, loading, checkSubscription } = useSubscription();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user has purchased any classes or subscriptions
-    const payments = JSON.parse(localStorage.getItem('payments') || '[]');
-    const hasValidPayment = payments.length > 0;
-    setUserHasAccess(hasValidPayment);
-  }, []);
-
-  const subscriptionInfo = {
-    name: 'Premium Video Access',
-    price: 29,
-    date: 'Monthly Subscription'
-  };
+    if (user) {
+      checkSubscription();
+    }
+  }, [user]);
 
   const videoCategories = [
     {
       id: 1,
-      title: 'Basic Techniques',
+      title: 'Teknik Dasar',
       videos: [
         {
           id: 1,
-          title: 'Fundamental Stances',
+          title: 'Sikap Dasar Bela Diri',
           duration: '12:45',
           difficulty: 'Beginner',
           thumbnail: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=400&h=300&fit=crop',
@@ -42,7 +38,7 @@ const Videos = () => {
         },
         {
           id: 2,
-          title: 'Basic Punches & Blocks',
+          title: 'Pukulan & Blokir Dasar',
           duration: '18:30',
           difficulty: 'Beginner',
           thumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
@@ -52,11 +48,11 @@ const Videos = () => {
     },
     {
       id: 2,
-      title: 'Self Defense Scenarios',
+      title: 'Skenario Bela Diri',
       videos: [
         {
           id: 3,
-          title: 'Escape from Wrist Grab',
+          title: 'Lepas dari Cengkeraman Tangan',
           duration: '15:20',
           difficulty: 'Intermediate',
           thumbnail: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop',
@@ -64,7 +60,7 @@ const Videos = () => {
         },
         {
           id: 4,
-          title: 'Ground Defense Techniques',
+          title: 'Teknik Pertahanan di Tanah',
           duration: '22:15',
           difficulty: 'Advanced',
           thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
@@ -75,29 +71,43 @@ const Videos = () => {
   ];
 
   const handleVideoClick = (videoId: number, isPremium: boolean) => {
-    if (isPremium && !userHasAccess) {
-      setIsPaymentModalOpen(true);
+    if (!user) {
+      toast({
+        title: "Login Diperlukan",
+        description: "Silakan login terlebih dahulu untuk menonton video",
+        variant: "destructive",
+      });
       return;
     }
+
+    if (isPremium && !subscriptionData.subscribed) {
+      toast({
+        title: "Berlangganan Diperlukan",
+        description: "Video ini memerlukan berlangganan aktif",
+        variant: "destructive",
+      });
+      setShowSubscriptionPlans(true);
+      return;
+    }
+
     console.log('Playing video:', videoId);
     toast({
-      title: "Video Starting",
-      description: "Video player would open here in a real implementation",
+      title: "Memulai Video",
+      description: "Video player akan terbuka di sini dalam implementasi lengkap",
     });
   };
 
-  const handlePaymentSuccess = () => {
-    setUserHasAccess(true);
-    setIsPaymentModalOpen(false);
-    toast({
-      title: "Welcome to Premium!",
-      description: "You now have access to all premium video content",
-    });
-  };
-
-  const handlePaymentCancel = () => {
-    setIsPaymentModalOpen(false);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-martial-dark">
+        <Navigation />
+        <div className="pt-20 pb-20 flex items-center justify-center">
+          <div className="text-white text-xl">Loading...</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-martial-dark">
@@ -107,121 +117,156 @@ const Videos = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Learning Videos
+              Video Pembelajaran
             </h1>
             <p className="text-xl text-gray-300 mb-8">
-              Master self-defense techniques with our comprehensive video library
+              Kuasai teknik bela diri dengan koleksi video pembelajaran komprehensif kami
             </p>
             
-            {!userHasAccess && (
-              <div className="bg-martial-purple/20 border border-martial-purple rounded-lg p-6 max-w-2xl mx-auto">
+            {!user && (
+              <div className="bg-martial-purple/20 border border-martial-purple rounded-lg p-6 max-w-2xl mx-auto mb-8">
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  Unlock Premium Content
+                  Login Untuk Akses Video
                 </h3>
                 <p className="text-gray-300 mb-4">
-                  Get access to all premium videos with our monthly subscription
+                  Silakan login untuk dapat mengakses video pembelajaran kami
+                </p>
+                <Button className="btn-primary">
+                  Login Sekarang
+                </Button>
+              </div>
+            )}
+
+            {user && !subscriptionData.subscribed && (
+              <div className="bg-martial-purple/20 border border-martial-purple rounded-lg p-6 max-w-2xl mx-auto mb-8">
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  Buka Konten Premium
+                </h3>
+                <p className="text-gray-300 mb-4">
+                  Dapatkan akses ke semua video premium dengan berlangganan bulanan
                 </p>
                 <div className="flex gap-4 justify-center">
                   <Button 
                     className="btn-primary"
-                    onClick={() => setIsPaymentModalOpen(true)}
+                    onClick={() => setShowSubscriptionPlans(true)}
                   >
-                    Subscribe for $29/month
+                    Berlangganan Mulai Rp 29.000/bulan
                   </Button>
-                  <Button variant="outline" className="text-white border-white hover:bg-white hover:text-black">
-                    View Classes
+                  <Button 
+                    variant="outline" 
+                    className="text-white border-white hover:bg-white hover:text-black"
+                    onClick={() => window.location.href = '/classes'}
+                  >
+                    Lihat Kelas
                   </Button>
                 </div>
               </div>
             )}
 
-            {userHasAccess && (
-              <div className="bg-green-500/20 border border-green-500 rounded-lg p-4 max-w-2xl mx-auto">
+            {user && subscriptionData.subscribed && (
+              <div className="bg-green-500/20 border border-green-500 rounded-lg p-4 max-w-2xl mx-auto mb-8">
                 <p className="text-green-400">
-                  ✅ You have access to all premium content!
+                  ✅ Anda memiliki akses ke semua konten premium!
+                </p>
+                <p className="text-sm text-gray-300 mt-1">
+                  Plan: {subscriptionData.subscription_tier || 'Basic'}
                 </p>
               </div>
             )}
           </div>
 
-          {videoCategories.map((category) => (
-            <div key={category.id} className="mb-12">
-              <h2 className="text-3xl font-bold text-white mb-6">
-                {category.title}
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {category.videos.map((video) => (
-                  <Card key={video.id} className="bg-martial-gray border-martial-gray card-hover overflow-hidden">
-                    <div className="relative">
-                      <img 
-                        src={video.thumbnail} 
-                        alt={video.title}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <button
-                          onClick={() => handleVideoClick(video.id, video.isPremium)}
-                          className="w-16 h-16 bg-martial-purple/80 rounded-full flex items-center justify-center hover:bg-martial-purple transition-colors"
-                        >
-                          {video.isPremium && !userHasAccess ? (
-                            <Lock className="w-6 h-6 text-white" />
-                          ) : (
-                            <Play className="w-6 h-6 text-white ml-1" />
-                          )}
-                        </button>
-                      </div>
-                      
-                      <div className="absolute top-4 right-4 flex gap-2">
-                        {video.isPremium && (
-                          <Badge className="bg-martial-purple text-white">
-                            <Star size={12} className="mr-1" />
-                            Premium
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="absolute bottom-4 right-4">
-                        <Badge variant="secondary" className="bg-black/60 text-white">
-                          <Clock size={12} className="mr-1" />
-                          {video.duration}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg text-white">
-                        {video.title}
-                      </CardTitle>
-                    </CardHeader>
-                    
-                    <CardContent>
-                      <Badge 
-                        variant="outline" 
-                        className={`${
-                          video.difficulty === 'Beginner' ? 'border-green-500 text-green-400' :
-                          video.difficulty === 'Intermediate' ? 'border-yellow-500 text-yellow-400' :
-                          'border-red-500 text-red-400'
-                        }`}
-                      >
-                        {video.difficulty}
-                      </Badge>
-                    </CardContent>
-                  </Card>
-                ))}
+          {showSubscriptionPlans ? (
+            <div className="space-y-8">
+              <div className="text-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowSubscriptionPlans(false)}
+                  className="text-white border-white hover:bg-white hover:text-black mb-8"
+                >
+                  ← Kembali ke Video
+                </Button>
               </div>
+              <SubscriptionPlans />
             </div>
-          ))}
+          ) : (
+            <>
+              {videoCategories.map((category) => (
+                <div key={category.id} className="mb-12">
+                  <h2 className="text-3xl font-bold text-white mb-6">
+                    {category.title}
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {category.videos.map((video) => {
+                      const canWatch = !video.isPremium || subscriptionData.subscribed;
+                      
+                      return (
+                        <Card key={video.id} className="bg-martial-gray border-martial-gray card-hover overflow-hidden">
+                          <div className="relative">
+                            <img 
+                              src={video.thumbnail} 
+                              alt={video.title}
+                              className="w-full h-48 object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <button
+                                onClick={() => handleVideoClick(video.id, video.isPremium)}
+                                className="w-16 h-16 bg-martial-purple/80 rounded-full flex items-center justify-center hover:bg-martial-purple transition-colors"
+                              >
+                                {video.isPremium && !canWatch ? (
+                                  <Lock className="w-6 h-6 text-white" />
+                                ) : (
+                                  <Play className="w-6 h-6 text-white ml-1" />
+                                )}
+                              </button>
+                            </div>
+                            
+                            <div className="absolute top-4 right-4 flex gap-2">
+                              {video.isPremium && (
+                                <Badge className="bg-martial-purple text-white">
+                                  <Star size={12} className="mr-1" />
+                                  Premium
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="absolute bottom-4 right-4">
+                              <Badge variant="secondary" className="bg-black/60 text-white">
+                                <Clock size={12} className="mr-1" />
+                                {video.duration}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg text-white">
+                              {video.title}
+                            </CardTitle>
+                          </CardHeader>
+                          
+                          <CardContent>
+                            <Badge 
+                              variant="outline" 
+                              className={`${
+                                video.difficulty === 'Beginner' ? 'border-green-500 text-green-400' :
+                                video.difficulty === 'Intermediate' ? 'border-yellow-500 text-yellow-400' :
+                                'border-red-500 text-red-400'
+                              }`}
+                            >
+                              {video.difficulty}
+                            </Badge>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
 
-      <PaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={handlePaymentCancel}
-        onSuccess={handlePaymentSuccess}
-        classInfo={subscriptionInfo}
-      />
-      
       <Footer />
     </div>
   );
