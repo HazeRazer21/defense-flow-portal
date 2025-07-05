@@ -15,7 +15,7 @@ export const useSubscription = () => {
   const { user } = useAuth();
 
   const checkSubscription = async () => {
-    if (!user) {
+    if (!user || !user.id) {
       setSubscriptionData({ subscribed: false });
       setLoading(false);
       return;

@@ -21,7 +21,7 @@ const Videos = () => {
     if (user) {
       checkSubscription();
     }
-  }, [user]);
+  }, [user, checkSubscription]);
 
   const videoCategories = [
     {
@@ -80,7 +80,7 @@ const Videos = () => {
       return;
     }
 
-    if (isPremium && !subscriptionData.subscribed) {
+    if (isPremium && !subscriptionData?.subscribed) {
       toast({
         title: "Berlangganan Diperlukan",
         description: "Video ini memerlukan berlangganan aktif",
@@ -137,7 +137,7 @@ const Videos = () => {
               </div>
             )}
 
-            {user && !subscriptionData.subscribed && (
+            {user && !subscriptionData?.subscribed && (
               <div className="bg-martial-purple/20 border border-martial-purple rounded-lg p-6 max-w-2xl mx-auto mb-8">
                 <h3 className="text-xl font-semibold text-white mb-2">
                   Buka Konten Premium
@@ -163,7 +163,7 @@ const Videos = () => {
               </div>
             )}
 
-            {user && subscriptionData.subscribed && (
+            {user && subscriptionData?.subscribed && (
               <div className="bg-green-500/20 border border-green-500 rounded-lg p-4 max-w-2xl mx-auto mb-8">
                 <p className="text-green-400">
                   ✅ Anda memiliki akses ke semua konten premium!
@@ -198,7 +198,7 @@ const Videos = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {category.videos.map((video) => {
-                      const canWatch = !video.isPremium || subscriptionData.subscribed;
+                      const canWatch = !video.isPremium || subscriptionData?.subscribed;
                       
                       return (
                         <Card key={video.id} className="bg-martial-gray border-martial-gray card-hover overflow-hidden">
