@@ -1,13 +1,11 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, Home, Calendar, Video, Contact, User, LogIn, LogOut } from 'lucide-react';
+import { Menu, Home, Calendar, Video, Contact, User, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout, isAuthenticated } = useAuth();
 
   const navItems = [
     { name: 'Home', icon: Home, href: '/' },
@@ -56,35 +54,17 @@ const Navigation = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            {isAuthenticated && user ? (
-              <>
-                <span className="text-gray-300 text-sm">
-                  Welcome, {user.name || user.email}
-                </span>
-                <Button 
-                  variant="ghost" 
-                  onClick={logout}
-                  className="text-gray-300 hover:text-martial-purple"
-                >
-                  <LogOut size={16} className="mr-2" />
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="ghost" className="text-gray-300 hover:text-martial-purple">
-                    <LogIn size={16} className="mr-2" />
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button className="btn-primary">
-                    Sign Up
-                  </Button>
-                </Link>
-              </>
-            )}
+            <Link to="/login">
+              <Button variant="ghost" className="text-gray-300 hover:text-martial-purple">
+                <LogIn size={16} className="mr-2" />
+                Login
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button className="btn-primary">
+                Sign Up
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -127,35 +107,17 @@ const Navigation = () => {
                 )
               ))}
               <div className="pt-4 space-y-2">
-                {isAuthenticated && user ? (
-                  <>
-                    <div className="text-gray-300 text-sm px-3 py-2">
-                      Welcome, {user.name || user.email}
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      onClick={logout}
-                      className="w-full text-gray-300 hover:text-martial-purple"
-                    >
-                      <LogOut size={16} className="mr-2" />
-                      Logout
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login">
-                      <Button variant="ghost" className="w-full text-gray-300 hover:text-martial-purple">
-                        <LogIn size={16} className="mr-2" />
-                        Login
-                      </Button>
-                    </Link>
-                    <Link to="/signup">
-                      <Button className="w-full btn-primary">
-                        Sign Up
-                      </Button>
-                    </Link>
-                  </>
-                )}
+                <Link to="/login">
+                  <Button variant="ghost" className="w-full text-gray-300 hover:text-martial-purple">
+                    <LogIn size={16} className="mr-2" />
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="w-full btn-primary">
+                    Sign Up
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

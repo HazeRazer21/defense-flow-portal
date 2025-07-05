@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -29,14 +28,6 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signup, isAuthenticated, user } = useAuth();
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      navigate('/');
-    }
-  }, [isAuthenticated, user, navigate]);
 
   const {
     register,
@@ -51,21 +42,24 @@ const Signup = () => {
     console.log('Signup attempt:', data);
     
     try {
-      const { error } = await signup(data.email, data.password, data.name);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      if (error) {
-        toast({
-          title: "Signup Failed",
-          description: error,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Account Created Successfully!",
-          description: "Please check your email to verify your account.",
-        });
-        // Navigation will be handled by useEffect after auth state changes
-      }
+      // Mock user creation - in real app, this would create user in backend
+      const newUser = {
+        email: data.email,
+        name: data.name,
+        role: 'student'
+      };
+      
+      localStorage.setItem('user', JSON.stringify(newUser));
+      
+      toast({
+        title: "Account Created Successfully!",
+        description: "Welcome to Martial Arts Academy. Redirecting to classes...",
+      });
+      
+      setTimeout(() => navigate('/classes'), 1500);
     } catch (error) {
       toast({
         title: "Signup Failed",
