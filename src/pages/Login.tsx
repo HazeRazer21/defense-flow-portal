@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -23,6 +24,18 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, isAuthenticated, user } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const {
     register,
@@ -37,39 +50,25 @@ const Login = () => {
     console.log('Login attempt:', data);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await login(data.email, data.password);
       
-      // Mock authentication - in real app, this would validate against backend
-      if (data.email === 'admin@martialarts.com' && data.password === 'admin123') {
-        localStorage.setItem('user', JSON.stringify({ 
-          email: data.email, 
-          role: 'admin',
-          name: 'Admin User'
-        }));
+      if (error) {
         toast({
-          title: "Login Successful",
-          description: "Welcome back! Redirecting to dashboard...",
+          title: "Login Failed",
+          description: error,
+          variant: "destructive"
         });
-        setTimeout(() => navigate('/admin'), 1500);
-      } else if (data.email && data.password) {
-        localStorage.setItem('user', JSON.stringify({ 
-          email: data.email, 
-          role: 'student',
-          name: 'Student User'
-        }));
-        toast({
-          title: "Login Successful",
-          description: "Welcome back! Redirecting to classes...",
-        });
-        setTimeout(() => navigate('/classes'), 1500);
       } else {
-        throw new Error('Invalid credentials');
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        // Navigation will be handled by useEffect
       }
     } catch (error) {
       toast({
         title: "Login Failed",
-        description: "Invalid email or password. Try admin@martialarts.com / admin123",
+        description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -131,9 +130,7 @@ const Login = () => {
             </Button>
             
             <div className="text-center text-gray-300 text-sm">
-              <p className="mb-2">Demo credentials:</p>
-              <p>Admin: admin@martialarts.com / admin123</p>
-              <p>Student: any@email.com / password123</p>
+              <p className="mb-2">Create an account to get started</p>
             </div>
             
             <div className="text-center text-gray-300">
