@@ -11,6 +11,7 @@ import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -25,17 +26,18 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login, isAuthenticated, user } = useAuth();
+  const { isAdmin, loading: profileLoading } = useProfile();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && user) {
-      if (user.role === 'admin') {
+    if (isAuthenticated && user && !profileLoading) {
+      if (isAdmin) {
         navigate('/admin');
       } else {
         navigate('/');
       }
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, isAdmin, profileLoading, navigate]);
 
   const {
     register,
@@ -63,7 +65,7 @@ const Login = () => {
           title: "Login Successful",
           description: "Welcome back!",
         });
-        // Navigation will be handled by useEffect
+        // Navigation will be handled by useEffect based on admin status
       }
     } catch (error) {
       toast({
