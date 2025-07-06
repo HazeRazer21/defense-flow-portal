@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -16,21 +16,12 @@ const Videos = () => {
   const [videoCategories, setVideoCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { subscriptionData, loading: subscriptionLoading, checkSubscription } = useSubscription();
+  const { subscriptionData, loading: subscriptionLoading } = useSubscription();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchVideos();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      checkSubscription();
-    }
-  }, [user, checkSubscription]);
-
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('videos')
         .select('*')
@@ -75,7 +66,11 @@ const Videos = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
 
   const handleVideoClick = (videoId: number, isPremium: boolean) => {
     if (!user) {
@@ -104,12 +99,13 @@ const Videos = () => {
     });
   };
 
-  if (loading || subscriptionLoading) {
+  // Show loading state
+  if (loading) {
     return (
       <div className="min-h-screen bg-martial-dark">
         <Navigation />
         <div className="pt-20 pb-20 flex items-center justify-center">
-          <div className="text-white text-xl">Loading...</div>
+          <div className="text-white text-xl">Memuat video...</div>
         </div>
         <Footer />
       </div>

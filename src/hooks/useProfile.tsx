@@ -22,6 +22,9 @@ export const useProfile = () => {
       return;
     }
 
+    // Prevent multiple calls if already loading
+    if (loading && profile) return;
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -29,7 +32,7 @@ export const useProfile = () => {
         .eq('id', user.id)
         .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
         return;
       }
@@ -44,7 +47,7 @@ export const useProfile = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id to prevent unnecessary calls
 
   const isAdmin = profile?.role === 'admin';
 

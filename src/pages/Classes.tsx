@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,21 +17,12 @@ const Classes = () => {
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { subscriptionData, loading: subscriptionLoading, checkSubscription } = useSubscription();
+  const { subscriptionData, loading: subscriptionLoading } = useSubscription();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchClasses();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      checkSubscription();
-    }
-  }, [user, checkSubscription]);
-
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('classes')
         .select('*')
@@ -52,7 +43,11 @@ const Classes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   const handleBookClass = async (classItem: any) => {
     if (!user) {
@@ -64,7 +59,7 @@ const Classes = () => {
       return;
     }
 
-    if (classItem.requires_subscription && !subscriptionData.subscribed) {
+    if (classItem.requires_subscription && !subscriptionData?.subscribed) {
       toast({
         title: "Berlangganan Diperlukan",
         description: "Kelas ini memerlukan berlangganan aktif",
@@ -85,7 +80,7 @@ const Classes = () => {
         ]);
 
       if (error) {
-        if (error.code === '23505') { // Unique violation
+        if (error.code === '23505') {
           toast({
             title: "Sudah Terdaftar",
             description: "Anda sudah terdaftar untuk kelas ini",
@@ -101,7 +96,6 @@ const Classes = () => {
         description: `Anda telah mendaftar untuk kelas ${classItem.name}`,
       });
 
-      // Refresh classes to update enrollment count
       fetchClasses();
     } catch (error) {
       console.error('Error booking class:', error);
@@ -113,12 +107,13 @@ const Classes = () => {
     }
   };
 
-  if (loading || subscriptionLoading) {
+  // Show loading state
+  if (loading) {
     return (
       <div className="min-h-screen bg-martial-dark">
         <Navigation />
         <div className="pt-20 pb-20 flex items-center justify-center">
-          <div className="text-white text-xl">Loading...</div>
+          <div className="text-white text-xl">Memuat kelas...</div>
         </div>
         <Footer />
       </div>
@@ -153,7 +148,7 @@ const Classes = () => {
               </div>
             )}
 
-            {user && !subscriptionData.subscribed && (
+            {user && !subscriptionLoading && !subscriptionData?.subscribed && (
               <div className="bg-martial-purple/20 border border-martial-purple rounded-lg p-6 max-w-2xl mx-auto mb-8">
                 <h3 className="text-xl font-semibold text-white mb-2">
                   Berlangganan Untuk Akses Penuh
@@ -186,81 +181,88 @@ const Classes = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {classes.map((classItem) => {
-                const canAccess = !classItem.requires_subscription || subscriptionData.subscribed;
-                
-                return (
-                  <Card key={classItem.id} className="bg-martial-gray border-martial-gray card-hover relative">
-                    {classItem.requires_subscription && !subscriptionData.subscribed && (
-                      <div className="absolute top-4 right-4">
-                        <Badge className="bg-martial-purple text-white">
-                          <Lock size={12} className="mr-1" />
-                          Premium
-                        </Badge>
-                      </div>
-                    )}
+              {classes.length === 0 ? (
+                <div className="col-span-full text-center text-gray-300">
+                  <p>Belum ada kelas yang tersedia.</p>
+                </div>
+              ) : (
+                classes.map((classItem) => {
+                  const canAccess = !classItem.requires_subscription || (subscriptionData?.subscribed && !subscriptionLoading);
+                  
+                  return (
+                    <Card key={classItem.id} className="bg-martial-gray border-martial-gray card-hover relative">
+                      {classItem.requires_subscription && (!subscriptionData?.subscribed || subscriptionLoading) && (
+                        <div className="absolute top-4 right-4">
+                          <Badge className="bg-martial-purple text-white">
+                            <Lock size={12} className="mr-1" />
+                            Premium
+                          </Badge>
+                        </div>
+                      )}
 
-                    <CardHeader>
-                      <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl text-white">
-                          {classItem.name}
-                        </CardTitle>
-                        <Badge 
-                          variant="secondary" 
-                          className={`${
-                            classItem.level === 'Beginner' ? 'bg-green-500/20 text-green-400' :
-                            classItem.level === 'Advanced' ? 'bg-red-500/20 text-red-400' :
-                            'bg-martial-purple/20 text-martial-purple'
-                          }`}
-                        >
-                          {classItem.level}
-                        </Badge>
-                      </div>
-                      <p className="text-gray-300 text-sm">
-                        {classItem.description}
-                      </p>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center text-gray-300">
-                          <Calendar size={16} className="mr-2" />
-                          <span>{new Date(classItem.date).toLocaleDateString('id-ID')}</span>
+                      <CardHeader>
+                        <div className="flex justify-between items-start mb-2">
+                          <CardTitle className="text-xl text-white">
+                            {classItem.name}
+                          </CardTitle>
+                          <Badge 
+                            variant="secondary" 
+                            className={`${
+                              classItem.level === 'Beginner' ? 'bg-green-500/20 text-green-400' :
+                              classItem.level === 'Advanced' ? 'bg-red-500/20 text-red-400' :
+                              'bg-martial-purple/20 text-martial-purple'
+                            }`}
+                          >
+                            {classItem.level}
+                          </Badge>
                         </div>
-                        
-                        <div className="flex items-center text-gray-300">
-                          <Clock size={16} className="mr-2" />
-                          <span>{classItem.time}</span>
-                        </div>
-                        
-                        <div className="flex items-center text-gray-300">
-                          <MapPin size={16} className="mr-2" />
-                          <span>{classItem.location}</span>
-                        </div>
-                        
-                        <div className="flex items-center text-gray-300">
-                          <Users size={16} className="mr-2" />
-                          <span>{classItem.enrolled}/{classItem.capacity} terdaftar</span>
-                        </div>
-                      </div>
+                        <p className="text-gray-300 text-sm">
+                          {classItem.description}
+                        </p>
+                      </CardHeader>
                       
-                      <div className="flex justify-between items-center pt-4">
-                        <span className="text-lg font-semibold text-gray-300">
-                          Instructor: {classItem.instructor}
-                        </span>
-                        <Button 
-                          onClick={() => handleBookClass(classItem)}
-                          className={`${canAccess ? 'btn-primary' : 'bg-gray-600 hover:bg-gray-700'}`}
-                          disabled={classItem.enrolled >= classItem.capacity || (!canAccess && !user)}
-                        >
-                          {classItem.enrolled >= classItem.capacity ? 'Penuh' : 
-                           !canAccess ? 'Berlangganan' : 'Daftar'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center text-gray-300">
+                            <Calendar size={16} className="mr-2" />
+                            <span>{new Date(classItem.date).toLocaleDateString('id-ID')}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-gray-300">
+                            <Clock size={16} className="mr-2" />
+                            <span>{classItem.time}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-gray-300">
+                            <MapPin size={16} className="mr-2" />
+                            <span>{classItem.location}</span>
+                          </div>
+                          
+                          <div className="flex items-center text-gray-300">
+                            <Users size={16} className="mr-2" />
+                            <span>{classItem.enrolled}/{classItem.capacity} terdaftar</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-4">
+                          <span className="text-lg font-semibold text-gray-300">
+                            Instructor: {classItem.instructor}
+                          </span>
+                          <Button 
+                            onClick={() => handleBookClass(classItem)}
+                            className={`${canAccess ? 'btn-primary' : 'bg-gray-600 hover:bg-gray-700'}`}
+                            disabled={classItem.enrolled >= classItem.capacity || (!canAccess && !user) || subscriptionLoading}
+                          >
+                            {subscriptionLoading ? 'Loading...' :
+                             classItem.enrolled >= classItem.capacity ? 'Penuh' : 
+                             !canAccess ? 'Berlangganan' : 'Daftar'}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
             </div>
           )}
         </div>

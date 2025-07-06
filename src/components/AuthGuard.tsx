@@ -13,26 +13,28 @@ interface AuthGuardProps {
 const AuthGuard = ({ children, requireAuth = false, requireRole }: AuthGuardProps) => {
   const { user, isAuthenticated } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Only run auth check when profile loading is complete
     if (!profileLoading) {
-      setLoading(false);
-    }
-  }, [profileLoading]);
-
-  useEffect(() => {
-    if (!loading) {
       if (requireAuth && !isAuthenticated) {
         navigate('/login');
-      } else if (requireRole && (!profile || profile.role !== requireRole)) {
-        navigate('/');
+        return;
       }
+      
+      if (requireRole && (!profile || profile.role !== requireRole)) {
+        navigate('/');
+        return;
+      }
+      
+      setAuthChecked(true);
     }
-  }, [user, profile, loading, requireAuth, requireRole, navigate, isAuthenticated]);
+  }, [user, profile, profileLoading, requireAuth, requireRole, navigate, isAuthenticated]);
 
-  if (loading) {
+  // Show loading only when we haven't checked auth yet
+  if (!authChecked || profileLoading) {
     return (
       <div className="min-h-screen bg-martial-dark flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
