@@ -22,9 +22,8 @@ export const useProfile = () => {
       return;
     }
 
-    // Prevent multiple calls if already loading
-    if (loading && profile) return;
-
+    console.log('Fetching profile for user:', user.id);
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -32,12 +31,28 @@ export const useProfile = () => {
         .eq('id', user.id)
         .single();
 
+      console.log('Profile fetch result:', { data, error });
+
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
+        setLoading(false);
         return;
       }
 
-      setProfile(data);
+      if (data) {
+        console.log('Profile data found:', data);
+        setProfile(data);
+      } else {
+        console.log('No profile found, creating default profile');
+        // If no profile exists, create one with student role
+        const defaultProfile = {
+          id: user.id,
+          email: user.email || '',
+          name: user.name || user.email?.split('@')[0] || '',
+          role: 'student'
+        };
+        setProfile(defaultProfile);
+      }
     } catch (error) {
       console.error('Error in fetchProfile:', error);
     } finally {
@@ -47,9 +62,11 @@ export const useProfile = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, [user?.id]); // Only depend on user.id to prevent unnecessary calls
+  }, [user?.id]);
 
   const isAdmin = profile?.role === 'admin';
+  
+  console.log('Current profile state:', { profile, isAdmin, loading });
 
   return {
     profile,

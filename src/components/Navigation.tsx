@@ -1,13 +1,15 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, Home, Calendar, Video, Contact, User, LogIn, LogOut } from 'lucide-react';
+import { Menu, Home, Calendar, Video, Contact, User, LogIn, LogOut, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
+  const { isAdmin } = useProfile();
 
   const navItems = [
     { name: 'Home', icon: Home, href: '/' },
@@ -15,6 +17,11 @@ const Navigation = () => {
     { name: 'Videos', icon: Video, href: '/videos' },
     { name: 'Contact', icon: Contact, href: '#contact' },
   ];
+
+  // Add admin link if user is admin
+  if (isAdmin) {
+    navItems.push({ name: 'Admin', icon: Settings, href: '/admin' });
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-martial-dark/95 backdrop-blur-sm border-b border-martial-gray">
@@ -59,7 +66,7 @@ const Navigation = () => {
             {isAuthenticated && user ? (
               <>
                 <span className="text-gray-300 text-sm">
-                  Welcome, {user.name || user.email}
+                  Welcome, {user.name || user.email} {isAdmin && '(Admin)'}
                 </span>
                 <Button 
                   variant="ghost" 
@@ -130,7 +137,7 @@ const Navigation = () => {
                 {isAuthenticated && user ? (
                   <>
                     <div className="text-gray-300 text-sm px-3 py-2">
-                      Welcome, {user.name || user.email}
+                      Welcome, {user.name || user.email} {isAdmin && '(Admin)'}
                     </div>
                     <Button 
                       variant="ghost" 
