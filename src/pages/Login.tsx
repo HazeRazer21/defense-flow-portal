@@ -30,7 +30,11 @@ const Login = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log('Login redirect check:', { isAuthenticated, user: user?.email, isAdmin, profileLoading });
+    
     if (isAuthenticated && user && !profileLoading) {
+      console.log('Redirecting user...', isAdmin ? 'to admin' : 'to home');
+      
       if (isAdmin) {
         navigate('/admin');
       } else {
@@ -49,7 +53,7 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    console.log('Login attempt:', data);
+    console.log('Login attempt:', data.email);
     
     try {
       const { error } = await login(data.email, data.password);
@@ -65,7 +69,20 @@ const Login = () => {
           title: "Login Successful",
           description: "Welcome back!",
         });
-        // Navigation will be handled by useEffect based on admin status
+        
+        // Small delay to ensure profile is loaded before redirect
+        setTimeout(() => {
+          console.log('Post-login check:', { isAdmin, profileLoading });
+          if (!profileLoading) {
+            if (isAdmin) {
+              console.log('Redirecting admin to /admin');
+              navigate('/admin');
+            } else {
+              console.log('Redirecting user to /');
+              navigate('/');
+            }
+          }
+        }, 1000);
       }
     } catch (error) {
       toast({
