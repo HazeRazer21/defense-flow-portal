@@ -54,6 +54,10 @@ export const useSubscription = () => {
   };
 
   const createCheckout = async (planType: string = 'basic') => {
+    if (!user) {
+      throw new Error('User must be logged in to create checkout');
+    }
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -70,12 +74,17 @@ export const useSubscription = () => {
 
       if (error) {
         console.error('Error creating checkout:', error);
-        throw error;
+        throw new Error(`Failed to create checkout: ${error.message}`);
+      }
+
+      if (!data?.url) {
+        throw new Error('No checkout URL received');
       }
 
       console.log('Checkout URL received:', data.url);
       // Open Stripe checkout in a new tab
       window.open(data.url, '_blank');
+      return data;
     } catch (error) {
       console.error('Error in createCheckout:', error);
       throw error;
@@ -83,6 +92,10 @@ export const useSubscription = () => {
   };
 
   const openCustomerPortal = async () => {
+    if (!user) {
+      throw new Error('User must be logged in to access customer portal');
+    }
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -98,12 +111,17 @@ export const useSubscription = () => {
 
       if (error) {
         console.error('Error opening customer portal:', error);
-        throw error;
+        throw new Error(`Failed to open customer portal: ${error.message}`);
+      }
+
+      if (!data?.url) {
+        throw new Error('No portal URL received');
       }
 
       console.log('Customer portal URL received:', data.url);
       // Open customer portal in a new tab
       window.open(data.url, '_blank');
+      return data;
     } catch (error) {
       console.error('Error in openCustomerPortal:', error);
       throw error;

@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Star } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const SubscriptionPlans = () => {
   const { subscriptionData, createCheckout, openCustomerPortal } = useSubscription();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const plans = [
     {
@@ -56,22 +58,49 @@ const SubscriptionPlans = () => {
   ];
 
   const handleSubscribe = async (planType: string) => {
+    if (!user) {
+      toast({
+        title: "Login Diperlukan",
+        description: "Silakan login terlebih dahulu untuk berlangganan",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
+      toast({
+        title: "Memproses...",
+        description: "Membuat sesi pembayaran Stripe",
+      });
+
       await createCheckout(planType);
+      
       toast({
         title: "Membuka Halaman Pembayaran",
         description: "Anda akan diarahkan ke halaman pembayaran Stripe",
       });
     } catch (error) {
+      console.error('Subscription error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan';
+      
       toast({
         title: "Error",
-        description: "Gagal membuka halaman pembayaran. Silakan coba lagi.",
+        description: `Gagal membuka halaman pembayaran: ${errorMessage}`,
         variant: "destructive",
       });
     }
   };
 
   const handleManageSubscription = async () => {
+    if (!user) {
+      toast({
+        title: "Login Diperlukan",
+        description: "Silakan login terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await openCustomerPortal();
       toast({
@@ -79,9 +108,12 @@ const SubscriptionPlans = () => {
         description: "Anda akan diarahkan ke portal manajemen berlangganan",
       });
     } catch (error) {
+      console.error('Portal error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan';
+      
       toast({
         title: "Error",
-        description: "Gagal membuka portal pelanggan. Silakan coba lagi.",
+        description: `Gagal membuka portal pelanggan: ${errorMessage}`,
         variant: "destructive",
       });
     }
