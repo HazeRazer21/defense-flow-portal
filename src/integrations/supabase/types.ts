@@ -9,6 +9,116 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      class_registrations: {
+        Row: {
+          class_id: string | null
+          id: string
+          registered_at: string
+          user_id: string | null
+        }
+        Insert: {
+          class_id?: string | null
+          id?: string
+          registered_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          class_id?: string | null
+          id?: string
+          registered_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_registrations_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          capacity: number
+          created_at: string
+          date: string
+          description: string | null
+          duration: string | null
+          enrolled: number | null
+          id: string
+          instructor: string
+          level: string
+          location: string
+          name: string
+          price: number | null
+          requires_subscription: boolean | null
+          time: string
+          updated_at: string
+        }
+        Insert: {
+          capacity: number
+          created_at?: string
+          date: string
+          description?: string | null
+          duration?: string | null
+          enrolled?: number | null
+          id?: string
+          instructor: string
+          level: string
+          location: string
+          name: string
+          price?: number | null
+          requires_subscription?: boolean | null
+          time: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          date?: string
+          description?: string | null
+          duration?: string | null
+          enrolled?: number | null
+          id?: string
+          instructor?: string
+          level?: string
+          location?: string
+          name?: string
+          price?: number | null
+          requires_subscription?: boolean | null
+          time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           created_at: string
@@ -42,6 +152,51 @@ export type Database = {
           subscription_tier?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      videos: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          difficulty: string
+          duration: string | null
+          id: string
+          is_premium: boolean | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty: string
+          duration?: string | null
+          id?: string
+          is_premium?: boolean | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string
+          duration?: string | null
+          id?: string
+          is_premium?: boolean | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }

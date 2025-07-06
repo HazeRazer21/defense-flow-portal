@@ -9,12 +9,19 @@ import SubscriptionStatus from '@/components/SubscriptionStatus';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { supabase } from '@/integrations/supabase/client';
 
 const Videos = () => {
   const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
+  const [videoCategories, setVideoCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { subscriptionData, loading, checkSubscription } = useSubscription();
+  const { subscriptionData, loading: subscriptionLoading, checkSubscription } = useSubscription();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchVideos();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -22,52 +29,53 @@ const Videos = () => {
     }
   }, [user, checkSubscription]);
 
-  const videoCategories = [
-    {
-      id: 1,
-      title: 'Teknik Dasar',
-      videos: [
-        {
-          id: 1,
-          title: 'Sikap Dasar Bela Diri',
-          duration: '12:45',
-          difficulty: 'Beginner',
-          thumbnail: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=400&h=300&fit=crop',
-          isPremium: false
-        },
-        {
-          id: 2,
-          title: 'Pukulan & Blokir Dasar',
-          duration: '18:30',
-          difficulty: 'Beginner',
-          thumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
-          isPremium: true
+  const fetchVideos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Group videos by category
+      const groupedVideos = (data || []).reduce((acc: any, video: any) => {
+        const category = video.category;
+        if (!acc[category]) {
+          acc[category] = [];
         }
-      ]
-    },
-    {
-      id: 2,
-      title: 'Skenario Bela Diri',
-      videos: [
-        {
-          id: 3,
-          title: 'Lepas dari Cengkeraman Tangan',
-          duration: '15:20',
-          difficulty: 'Intermediate',
-          thumbnail: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop',
-          isPremium: true
-        },
-        {
-          id: 4,
-          title: 'Teknik Pertahanan di Tanah',
-          duration: '22:15',
-          difficulty: 'Advanced',
-          thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-          isPremium: true
-        }
-      ]
+        acc[category].push({
+          id: video.id,
+          title: video.title,
+          duration: video.duration || '0:00',
+          difficulty: video.difficulty,
+          thumbnail: video.thumbnail_url || 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=400&h=300&fit=crop',
+          isPremium: video.is_premium || false
+        });
+        return acc;
+      }, {});
+
+      // Convert to array format expected by VideoCategory component
+      const categories = Object.keys(groupedVideos).map((categoryName, index) => ({
+        id: index + 1,
+        title: categoryName,
+        videos: groupedVideos[categoryName]
+      }));
+
+      setVideoCategories(categories);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat video. Silakan refresh halaman.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleVideoClick = (videoId: number, isPremium: boolean) => {
     if (!user) {
@@ -96,7 +104,7 @@ const Videos = () => {
     });
   };
 
-  if (loading) {
+  if (loading || subscriptionLoading) {
     return (
       <div className="min-h-screen bg-martial-dark">
         <Navigation />
@@ -144,14 +152,20 @@ const Videos = () => {
             </div>
           ) : (
             <>
-              {videoCategories.map((category) => (
-                <VideoCategory
-                  key={category.id}
-                  category={category}
-                  subscriptionData={subscriptionData}
-                  onVideoClick={handleVideoClick}
-                />
-              ))}
+              {videoCategories.length === 0 ? (
+                <div className="text-center text-gray-300">
+                  <p>Belum ada video yang tersedia. Silakan hubungi admin untuk menambahkan video.</p>
+                </div>
+              ) : (
+                videoCategories.map((category) => (
+                  <VideoCategory
+                    key={category.id}
+                    category={category}
+                    subscriptionData={subscriptionData}
+                    onVideoClick={handleVideoClick}
+                  />
+                ))
+              )}
             </>
           )}
         </div>

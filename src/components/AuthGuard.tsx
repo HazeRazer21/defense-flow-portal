@@ -1,12 +1,8 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-interface User {
-  email: string;
-  name: string;
-  role: 'admin' | 'student';
-}
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -15,27 +11,26 @@ interface AuthGuardProps {
 }
 
 const AuthGuard = ({ children, requireAuth = false, requireRole }: AuthGuardProps) => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isAuthenticated } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
+    if (!profileLoading) {
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  }, [profileLoading]);
 
   useEffect(() => {
     if (!loading) {
-      if (requireAuth && !user) {
+      if (requireAuth && !isAuthenticated) {
         navigate('/login');
-      } else if (requireRole && user?.role !== requireRole) {
+      } else if (requireRole && (!profile || profile.role !== requireRole)) {
         navigate('/');
       }
     }
-  }, [user, loading, requireAuth, requireRole, navigate]);
+  }, [user, profile, loading, requireAuth, requireRole, navigate, isAuthenticated]);
 
   if (loading) {
     return (

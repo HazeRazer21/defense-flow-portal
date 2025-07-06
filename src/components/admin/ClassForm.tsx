@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClassForm = () => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [newClass, setNewClass] = useState({
     name: '',
     instructor: '',
@@ -19,31 +21,67 @@ const ClassForm = () => {
     capacity: '',
     price: '',
     level: 'Beginner',
-    description: ''
+    description: '',
+    duration: '',
+    requires_subscription: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Adding new class:', newClass);
-    
-    // Simulate saving to database
-    toast({
-      title: "Kelas Berhasil Dibuat",
-      description: `Kelas "${newClass.name}" telah ditambahkan`,
-    });
-    
-    // Reset form
-    setNewClass({
-      name: '',
-      instructor: '',
-      date: '',
-      time: '',
-      location: '',
-      capacity: '',
-      price: '',
-      level: 'Beginner',
-      description: ''
-    });
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('classes')
+        .insert([
+          {
+            name: newClass.name,
+            instructor: newClass.instructor,
+            date: newClass.date,
+            time: newClass.time,
+            location: newClass.location,
+            capacity: parseInt(newClass.capacity),
+            price: newClass.price ? parseFloat(newClass.price) : null,
+            level: newClass.level,
+            description: newClass.description,
+            duration: newClass.duration,
+            requires_subscription: newClass.requires_subscription
+          }
+        ]);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Kelas Berhasil Dibuat",
+        description: `Kelas "${newClass.name}" telah ditambahkan`,
+      });
+      
+      // Reset form
+      setNewClass({
+        name: '',
+        instructor: '',
+        date: '',
+        time: '',
+        location: '',
+        capacity: '',
+        price: '',
+        level: 'Beginner',
+        description: '',
+        duration: '',
+        requires_subscription: false
+      });
+    } catch (error) {
+      console.error('Error creating class:', error);
+      toast({
+        title: "Error",
+        description: "Gagal membuat kelas. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -120,13 +158,22 @@ const ClassForm = () => {
           </div>
 
           <div className="space-y-2">
+            <Label className="text-gray-300">Durasi</Label>
+            <Input
+              value={newClass.duration}
+              onChange={(e) => setNewClass({...newClass, duration: e.target.value})}
+              placeholder="contoh: 90 menit"
+              className="bg-martial-dark border-martial-gray text-white"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label className="text-gray-300">Harga (Rp)</Label>
             <Input
               type="number"
               value={newClass.price}
               onChange={(e) => setNewClass({...newClass, price: e.target.value})}
               className="bg-martial-dark border-martial-gray text-white"
-              required
             />
           </div>
 
@@ -144,6 +191,19 @@ const ClassForm = () => {
             </select>
           </div>
 
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="requires_subscription"
+                checked={newClass.requires_subscription}
+                onChange={(e) => setNewClass({...newClass, requires_subscription: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="requires_subscription" className="text-gray-300">Memerlukan Berlangganan</Label>
+            </div>
+          </div>
+
           <div className="md:col-span-2 space-y-2">
             <Label className="text-gray-300">Deskripsi</Label>
             <Textarea
@@ -155,8 +215,8 @@ const ClassForm = () => {
           </div>
 
           <div className="md:col-span-2">
-            <Button type="submit" className="btn-primary">
-              Buat Kelas
+            <Button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Membuat...' : 'Buat Kelas'}
             </Button>
           </div>
         </form>

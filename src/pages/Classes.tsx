@@ -10,65 +10,51 @@ import SubscriptionPlans from '@/components/SubscriptionPlans';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { supabase } from '@/integrations/supabase/client';
 
 const Classes = () => {
   const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { subscriptionData, loading, checkSubscription } = useSubscription();
+  const { subscriptionData, loading: subscriptionLoading, checkSubscription } = useSubscription();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
 
   useEffect(() => {
     if (user) {
       checkSubscription();
     }
-  }, [user]);
+  }, [user, checkSubscription]);
 
-  const classes = [
-    {
-      id: 1,
-      name: 'Basic Self Defense',
-      instructor: 'Master Chen',
-      date: '2024-01-15',
-      time: '18:00 - 19:30',
-      duration: '90 minutes',
-      location: 'Main Dojo',
-      capacity: 15,
-      enrolled: 8,
-      level: 'Beginner',
-      description: 'Learn fundamental self-defense techniques for everyday situations.',
-      requiresSubscription: false
-    },
-    {
-      id: 2,
-      name: 'Advanced Combat Training',
-      instructor: 'Sensei Rodriguez',
-      date: '2024-01-17',
-      time: '19:00 - 20:30',
-      duration: '90 minutes',
-      location: 'Training Hall A',
-      capacity: 12,
-      enrolled: 5,
-      level: 'Advanced',
-      description: 'Advanced techniques for experienced practitioners.',
-      requiresSubscription: true
-    },
-    {
-      id: 3,
-      name: 'Women\'s Self Defense',
-      instructor: 'Master Sarah',
-      date: '2024-01-20',
-      time: '10:00 - 11:30',
-      duration: '90 minutes',
-      location: 'Main Dojo',
-      capacity: 20,
-      enrolled: 12,
-      level: 'All Levels',
-      description: 'Specialized self-defense techniques designed for women.',
-      requiresSubscription: false
+  const fetchClasses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      setClasses(data || []);
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat kelas. Silakan refresh halaman.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const handleBookClass = (classItem: any) => {
+  const handleBookClass = async (classItem: any) => {
     if (!user) {
       toast({
         title: "Login Diperlukan",
@@ -78,7 +64,7 @@ const Classes = () => {
       return;
     }
 
-    if (classItem.requiresSubscription && !subscriptionData.subscribed) {
+    if (classItem.requires_subscription && !subscriptionData.subscribed) {
       toast({
         title: "Berlangganan Diperlukan",
         description: "Kelas ini memerlukan berlangganan aktif",
@@ -88,13 +74,46 @@ const Classes = () => {
       return;
     }
 
-    toast({
-      title: "Berhasil Mendaftar!",
-      description: `Anda telah mendaftar untuk kelas ${classItem.name}`,
-    });
+    try {
+      const { error } = await supabase
+        .from('class_registrations')
+        .insert([
+          {
+            class_id: classItem.id,
+            user_id: user.id
+          }
+        ]);
+
+      if (error) {
+        if (error.code === '23505') { // Unique violation
+          toast({
+            title: "Sudah Terdaftar",
+            description: "Anda sudah terdaftar untuk kelas ini",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
+
+      toast({
+        title: "Berhasil Mendaftar!",
+        description: `Anda telah mendaftar untuk kelas ${classItem.name}`,
+      });
+
+      // Refresh classes to update enrollment count
+      fetchClasses();
+    } catch (error) {
+      console.error('Error booking class:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mendaftar kelas. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (loading) {
+  if (loading || subscriptionLoading) {
     return (
       <div className="min-h-screen bg-martial-dark">
         <Navigation />
@@ -168,11 +187,11 @@ const Classes = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {classes.map((classItem) => {
-                const canAccess = !classItem.requiresSubscription || subscriptionData.subscribed;
+                const canAccess = !classItem.requires_subscription || subscriptionData.subscribed;
                 
                 return (
                   <Card key={classItem.id} className="bg-martial-gray border-martial-gray card-hover relative">
-                    {classItem.requiresSubscription && !subscriptionData.subscribed && (
+                    {classItem.requires_subscription && !subscriptionData.subscribed && (
                       <div className="absolute top-4 right-4">
                         <Badge className="bg-martial-purple text-white">
                           <Lock size={12} className="mr-1" />

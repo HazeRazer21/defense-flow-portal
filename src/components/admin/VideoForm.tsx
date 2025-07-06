@@ -7,35 +7,75 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const VideoForm = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [newVideo, setNewVideo] = useState({
     title: '',
     category: '',
     difficulty: 'Beginner',
     description: '',
-    isPremium: false
+    duration: '',
+    thumbnail_url: '',
+    video_url: '',
+    is_premium: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Adding new video:', newVideo);
-    
-    // Simulate video upload
-    toast({
-      title: "Video Berhasil Diupload",
-      description: `Video "${newVideo.title}" telah ditambahkan`,
-    });
-    
-    // Reset form
-    setNewVideo({
-      title: '',
-      category: '',
-      difficulty: 'Beginner',
-      description: '',
-      isPremium: false
-    });
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('videos')
+        .insert([
+          {
+            title: newVideo.title,
+            category: newVideo.category,
+            difficulty: newVideo.difficulty,
+            description: newVideo.description,
+            duration: newVideo.duration,
+            thumbnail_url: newVideo.thumbnail_url || null,
+            video_url: newVideo.video_url || null,
+            is_premium: newVideo.is_premium,
+            created_by: user?.id
+          }
+        ]);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Video Berhasil Diupload",
+        description: `Video "${newVideo.title}" telah ditambahkan`,
+      });
+      
+      // Reset form
+      setNewVideo({
+        title: '',
+        category: '',
+        difficulty: 'Beginner',
+        description: '',
+        duration: '',
+        thumbnail_url: '',
+        video_url: '',
+        is_premium: false
+      });
+    } catch (error) {
+      console.error('Error creating video:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengupload video. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,12 +123,32 @@ const VideoForm = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-300">File Video</Label>
+              <Label className="text-gray-300">Durasi</Label>
               <Input
-                type="file"
-                accept="video/*"
+                value={newVideo.duration}
+                onChange={(e) => setNewVideo({...newVideo, duration: e.target.value})}
+                placeholder="contoh: 12:45"
                 className="bg-martial-dark border-martial-gray text-white"
-                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-300">URL Thumbnail</Label>
+              <Input
+                value={newVideo.thumbnail_url}
+                onChange={(e) => setNewVideo({...newVideo, thumbnail_url: e.target.value})}
+                placeholder="https://example.com/thumbnail.jpg"
+                className="bg-martial-dark border-martial-gray text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-300">URL Video</Label>
+              <Input
+                value={newVideo.video_url}
+                onChange={(e) => setNewVideo({...newVideo, video_url: e.target.value})}
+                placeholder="https://example.com/video.mp4"
+                className="bg-martial-dark border-martial-gray text-white"
               />
             </div>
           </div>
@@ -107,15 +167,15 @@ const VideoForm = () => {
             <input
               type="checkbox"
               id="premium"
-              checked={newVideo.isPremium}
-              onChange={(e) => setNewVideo({...newVideo, isPremium: e.target.checked})}
+              checked={newVideo.is_premium}
+              onChange={(e) => setNewVideo({...newVideo, is_premium: e.target.checked})}
               className="w-4 h-4"
             />
             <Label htmlFor="premium" className="text-gray-300">Konten Premium</Label>
           </div>
 
-          <Button type="submit" className="btn-primary">
-            Upload Video
+          <Button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Mengupload...' : 'Upload Video'}
           </Button>
         </form>
       </CardContent>
