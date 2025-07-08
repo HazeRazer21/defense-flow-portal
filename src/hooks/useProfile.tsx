@@ -13,6 +13,7 @@ interface Profile {
 export const useProfile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastFetch, setLastFetch] = useState<number>(0);
   const { user } = useAuth();
 
   const fetchProfile = async () => {
@@ -21,6 +22,16 @@ export const useProfile = () => {
     if (!user) {
       console.log('No user found, setting profile to null');
       setProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    // Rate limiting: only fetch once every 2 minutes
+    const now = Date.now();
+    const twoMinutes = 2 * 60 * 1000;
+    
+    if (now - lastFetch < twoMinutes && profile) {
+      console.log('Profile fetch skipped - rate limited');
       setLoading(false);
       return;
     }
@@ -71,6 +82,7 @@ export const useProfile = () => {
         console.log('Found existing profile:', existingProfile);
         setProfile(existingProfile);
       }
+      setLastFetch(now);
     } catch (error) {
       console.error('Error in fetchProfile:', error);
       setProfile(null);
@@ -79,10 +91,11 @@ export const useProfile = () => {
     }
   };
 
+  // Only fetch on mount and when user ID changes, with rate limiting
   useEffect(() => {
     console.log('useProfile useEffect triggered, user:', user?.id);
     fetchProfile();
-  }, [user?.id]);
+  }, [user?.id]); // Keep user dependency but with rate limiting
 
   const isAdmin = profile?.role === 'admin';
   

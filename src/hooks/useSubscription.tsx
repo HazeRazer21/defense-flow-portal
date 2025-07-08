@@ -12,11 +12,22 @@ interface SubscriptionData {
 export const useSubscription = () => {
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData>({ subscribed: false });
   const [loading, setLoading] = useState(true);
+  const [lastChecked, setLastChecked] = useState<number>(0);
   const { user } = useAuth();
 
   const checkSubscription = async () => {
     if (!user || !user.id) {
       setSubscriptionData({ subscribed: false });
+      setLoading(false);
+      return;
+    }
+
+    // Rate limiting: only check once every 5 minutes (300 seconds)
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    
+    if (now - lastChecked < fiveMinutes) {
+      console.log('Subscription check skipped - rate limited');
       setLoading(false);
       return;
     }
@@ -45,6 +56,7 @@ export const useSubscription = () => {
 
       console.log('Subscription data received:', data);
       setSubscriptionData(data || { subscribed: false });
+      setLastChecked(now);
     } catch (error) {
       console.error('Error in checkSubscription:', error);
       setSubscriptionData({ subscribed: false });
@@ -128,9 +140,12 @@ export const useSubscription = () => {
     }
   };
 
+  // Only check subscription on mount, not on every user change
   useEffect(() => {
-    checkSubscription();
-  }, [user]);
+    if (user && user.id) {
+      checkSubscription();
+    }
+  }, []); // Remove user dependency to prevent excessive calls
 
   return {
     subscriptionData,

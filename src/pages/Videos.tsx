@@ -68,9 +68,10 @@ const Videos = () => {
     }
   }, [toast]);
 
+  // Only fetch videos once on mount
   useEffect(() => {
     fetchVideos();
-  }, [fetchVideos]);
+  }, []); // Remove dependencies to prevent refetching
 
   const handleVideoClick = (videoId: number, isPremium: boolean) => {
     if (!user) {
@@ -82,6 +83,7 @@ const Videos = () => {
       return;
     }
 
+    // Only check subscription if video is premium
     if (isPremium && !subscriptionData?.subscribed) {
       toast({
         title: "Berlangganan Diperlukan",
