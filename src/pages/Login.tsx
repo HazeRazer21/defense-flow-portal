@@ -23,11 +23,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [loginAttempted, setLoginAttempted] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login, isAuthenticated, user } = useAuth();
-  const { isAdmin, loading: profileLoading } = useProfile();
+  const { isAdmin, loading: profileLoading, profile } = useProfile();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -36,14 +35,14 @@ const Login = () => {
       user: user?.email, 
       isAdmin, 
       profileLoading,
-      loginAttempted 
+      profile: profile ? { id: profile.id, role: profile.role } : null
     });
     
-    if (isAuthenticated && user && !profileLoading) {
-      console.log('Conditions met for redirect. isAdmin:', isAdmin);
+    // Only redirect if user is authenticated and profile is loaded
+    if (isAuthenticated && user && !profileLoading && profile) {
+      console.log('User authenticated with profile loaded. isAdmin:', isAdmin);
       
-      // Add small delay to ensure state is fully updated
-      setTimeout(() => {
+      const redirectTimeout = setTimeout(() => {
         if (isAdmin) {
           console.log('Redirecting admin user to /admin');
           navigate('/admin', { replace: true });
@@ -51,9 +50,11 @@ const Login = () => {
           console.log('Redirecting regular user to /');
           navigate('/', { replace: true });
         }
-      }, 100);
+      }, 500); // Give some time for state to settle
+
+      return () => clearTimeout(redirectTimeout);
     }
-  }, [isAuthenticated, user, isAdmin, profileLoading, navigate, loginAttempted]);
+  }, [isAuthenticated, user, isAdmin, profileLoading, profile, navigate]);
 
   const {
     register,
@@ -65,7 +66,6 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    setLoginAttempted(true);
     console.log('Login attempt for:', data.email);
     
     try {
@@ -78,14 +78,13 @@ const Login = () => {
           description: error,
           variant: "destructive"
         });
-        setLoginAttempted(false);
       } else {
         console.log('Login successful, waiting for profile data...');
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
-        // Don't reset loginAttempted here - let useEffect handle the redirect
+        // Redirect will be handled by useEffect
       }
     } catch (error) {
       console.error('Login exception:', error);
@@ -94,17 +93,27 @@ const Login = () => {
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
-      setLoginAttempted(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Don't show login form if user is already authenticated and we're processing redirect
-  if (isAuthenticated && user && loginAttempted) {
+  // Show loading screen if user is authenticated but we're still loading profile
+  if (isAuthenticated && user && profileLoading) {
     return (
       <div className="min-h-screen bg-martial-dark flex items-center justify-center">
-        <div className="text-white text-xl">Redirecting...</div>
+        <div className="text-white text-xl">Loading profile...</div>
+      </div>
+    );
+  }
+
+  // Show redirecting screen if user is authenticated and profile is loaded
+  if (isAuthenticated && user && !profileLoading && profile) {
+    return (
+      <div className="min-h-screen bg-martial-dark flex items-center justify-center">
+        <div className="text-white text-xl">
+          {isAdmin ? 'Redirecting to admin dashboard...' : 'Redirecting to home...'}
+        </div>
       </div>
     );
   }
